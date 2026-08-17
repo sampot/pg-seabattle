@@ -1,3 +1,128 @@
 <!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#052c46"><meta name="description" content="在 10×10 海域佈署艦隊，輪流砲擊電腦並擊沉所有船艦。"><title>海戰佈艦</title><link rel="stylesheet" href="./styles.css"></head>
-<body><main><header><p class="eyebrow">桌遊系列</p><h1>海戰佈艦</h1><p>在 10×10 海域佈署艦隊，輪流砲擊電腦並擊沉所有船艦。</p></header><section class="hud"><span>目前分數 <b id="score">0</b></span><span id="extra">準備中</span><span>最高紀錄 <b id="best">0</b></span></section><p id="status" role="status">準備開始</p><section class="setup"><p id="placing">待放：航空母艦（5 格）</p><div class="controls"><button id="rotate">方向：橫向</button><button id="auto">自動佈艦</button><button id="new">重新開始</button></div></section><section class="seas"><div><h2>我方海域</h2><div id="mine" class="grid"></div></div><div><h2>敵方海域</h2><div id="enemy" class="grid"></div></div></section><details><summary>遊戲說明</summary><p>在 10×10 海域佈署艦隊，輪流砲擊電腦並擊沉所有船艦。</p><p>最高紀錄會同步至 Playgrounds；離線時仍會保存在此裝置。</p></details><footer>素材與授權詳見 ATTRIBUTION.md</footer></main><script type="module" src="./app.js"></script></body></html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#071d2b" />
+    <meta
+      name="description"
+      content="部署五艘船艦，人機對戰或觀看雙 AI 自動交火。"
+    />
+    <title>海戰佈艦</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main>
+      <header class="masthead">
+        <div>
+          <p class="eyebrow">FLEET COMMAND · 桌遊系列</p>
+          <h1>海戰佈艦</h1>
+        </div>
+        <button id="mute" class="quiet-button" type="button">關閉音效</button>
+      </header>
+
+      <section class="mode-bar" role="group" aria-label="對戰模式">
+        <button id="mode-human" class="mode-btn is-active" type="button" aria-pressed="true">
+          人機對戰
+        </button>
+        <button id="mode-ai" class="mode-btn" type="button" aria-pressed="false">
+          AI 對 AI
+        </button>
+      </section>
+
+      <section class="hud" aria-label="戰況">
+        <div><span>發射</span><strong><b id="shots">0</b> 砲</strong></div>
+        <div class="turn-card"><span>戰況</span><strong id="turn">你的回合</strong></div>
+        <div><span>最佳</span><strong><b id="best">—</b> 砲</strong></div>
+      </section>
+
+      <p id="status" class="status" role="status" aria-live="polite">艦隊準備中…</p>
+
+      <section id="setup-panel" class="command-panel" aria-labelledby="placing">
+        <div>
+          <p class="panel-label">部署階段</p>
+          <h2 id="placing">待部署：航空母艦（5 格）</h2>
+        </div>
+        <div class="controls">
+          <button id="rotate" type="button">方向：橫向</button>
+          <button id="auto" class="primary" type="button">自動布艦</button>
+        </div>
+      </section>
+
+      <section id="spectate-setup" class="command-panel" hidden>
+        <div>
+          <p class="panel-label">觀戰模式</p>
+          <h2>藍軍與紅軍自動布艦、輪流交火</h2>
+        </div>
+        <button id="start-spectate" class="primary" type="button">開始觀戰</button>
+      </section>
+
+      <section id="battle-panel" class="command-panel compact" hidden>
+        <div>
+          <p class="panel-label">交戰階段</p>
+          <h2 id="battle-heading">點選敵方海域發射砲彈</h2>
+        </div>
+        <div class="controls">
+          <button id="pause-spectate" class="quiet-button" type="button" hidden>暫停觀戰</button>
+          <button id="new-battle" class="quiet-button" type="button">重新部署</button>
+        </div>
+      </section>
+
+      <section id="seas" class="seas" aria-label="雙方海域">
+        <article class="sea-card player-sea">
+          <div class="sea-heading">
+            <div>
+              <p class="panel-label">HOME WATERS</p>
+              <h2 id="player-title">我方海域</h2>
+            </div>
+            <span><b id="player-remaining">5</b> 艘存續</span>
+          </div>
+          <div class="coordinate-frame">
+            <div class="letters" aria-hidden="true">
+              <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span>
+              <span>F</span><span>G</span><span>H</span><span>I</span><span>J</span>
+            </div>
+            <div id="player-grid" class="grid" role="grid" aria-label="我方海域"></div>
+          </div>
+          <ul id="player-fleet" class="fleet-list" aria-label="我方艦隊"></ul>
+        </article>
+
+        <article class="sea-card enemy-sea">
+          <div class="sea-heading">
+            <div>
+              <p class="panel-label">HOSTILE WATERS</p>
+              <h2 id="enemy-title">敵方海域</h2>
+            </div>
+            <span><b id="enemy-remaining">5</b> 艘存續</span>
+          </div>
+          <div class="coordinate-frame">
+            <div class="letters" aria-hidden="true">
+              <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span>
+              <span>F</span><span>G</span><span>H</span><span>I</span><span>J</span>
+            </div>
+            <div id="enemy-grid" class="grid" role="grid" aria-label="敵方海域" tabindex="-1"></div>
+          </div>
+          <ul id="enemy-fleet" class="fleet-list" aria-label="敵方艦隊"></ul>
+        </article>
+      </section>
+
+      <div class="footer-actions">
+        <button id="new" type="button">重新開始</button>
+        <details>
+          <summary>玩法與圖例</summary>
+          <div class="instructions">
+            <p><strong>人機對戰：</strong>先在我方海域部署五艘船（或自動布艦），再點敵方格子開火；先擊沉全部敵艦者勝。</p>
+            <p><strong>AI 對 AI：</strong>藍軍與紅軍自動布艦並輪流交火，雙方艦影都可見，可暫停／繼續觀戰。觀戰勝負不計入最佳砲數。</p>
+            <p><span class="legend hit"></span> 命中　<span class="legend miss"></span> 落空　<span class="legend sunk"></span> 已沉沒</p>
+            <p>人機模式中，灰色完整艦影只顯示我方船艦。</p>
+            <p>最佳砲數透過 Playgrounds 儲存；同步失敗不影響本局。</p>
+          </div>
+        </details>
+      </div>
+
+      <p id="toast" class="toast" role="status" hidden></p>
+      <footer>介面、船艦圖樣與音效皆由本遊戲程式原創產生 · 詳見 ATTRIBUTION.md</footer>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
